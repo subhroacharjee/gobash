@@ -15,8 +15,22 @@ func RunCommand(raw string) (string, error) {
 		raw: strings.TrimSuffix(raw, "\n"),
 	}
 
+	cmdName, err := cmd.searchFunctionToExecute()
+	if err != nil {
+		return "", fmt.Errorf("%s: command not found", strings.TrimSuffix(raw, "\n"))
+	}
+
 	v := reflect.ValueOf(cmd)
-	t := reflect.TypeOf(cmd)
+	result := v.MethodByName(cmdName).Call([]reflect.Value{})
+	if !result[1].IsNil() {
+		err = result[1].Interface().(error)
+	}
+	return result[0].String(), err
+}
+
+func (c Command) searchFunctionToExecute() (string, error) {
+	v := reflect.ValueOf(c)
+	t := reflect.TypeOf(c)
 
 	for i := 0; i < t.NumMethod(); i++ {
 		method := t.Method(i)
@@ -24,14 +38,11 @@ func RunCommand(raw string) (string, error) {
 			result := v.MethodByName(method.Name).Call([]reflect.Value{})
 			if len(result) > 0 && result[0].Bool() {
 				cmdName := strings.Split(method.Name, "IsValidFor")[1]
-				result := v.MethodByName(cmdName).Call([]reflect.Value{})
-				var err error
-				if !result[1].IsNil() {
-					err = result[0].Interface().(error)
-				}
-				return result[0].String(), err
+				return cmdName, nil
 			}
+
 		}
 	}
-	return "", fmt.Errorf("%s: command not found", strings.TrimSuffix(raw, "\n"))
+
+	return "", fmt.Errorf("not found")
 }

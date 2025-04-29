@@ -7,7 +7,7 @@ import (
 )
 
 func (c Command) IsValidForExit() bool {
-	return strings.HasPrefix(c.raw, "exit")
+	return strings.HasPrefix(c.raw, "exit ") || c.raw == "exit"
 }
 
 func (c Command) Exit() (string, error) {
@@ -27,4 +27,8 @@ func (c Command) Exit() (string, error) {
 
 	os.Exit(code)
 	return "", nil
+}
+
+func (c Command) DescribeExit() string {
+	return "exit is a shell builtin"
 }

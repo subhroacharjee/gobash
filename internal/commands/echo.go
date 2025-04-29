@@ -13,3 +13,7 @@ func (c Command) Echo() (string, error) {
 	data := strings.Split(c.raw, "echo")[1]
 	return strings.TrimLeftFunc(data, unicode.IsSpace), nil
 }
+
+func (c Command) DescribeEcho() string {
+	return "echo is a shell builtin"
+}
