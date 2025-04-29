@@ -25,7 +25,11 @@ func RunCommand(raw string) (string, error) {
 			if len(result) > 0 && result[0].Bool() {
 				cmdName := strings.Split(method.Name, "IsValidFor")[1]
 				result := v.MethodByName(cmdName).Call([]reflect.Value{})
-				return result[0].String(), result[1].Interface().(error)
+				var err error
+				if !result[1].IsNil() {
+					err = result[0].Interface().(error)
+				}
+				return result[0].String(), err
 			}
 		}
 	}

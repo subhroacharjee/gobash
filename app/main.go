@@ -23,9 +23,12 @@ func run() {
 			fmt.Fprintf(os.Stderr, "%v: error occured\n", err)
 		}
 
-		_, err = commands.RunCommand(raw)
+		data, err := commands.RunCommand(raw)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
+		} else {
+			fmt.Fprintln(os.Stdin, data)
 		}
+
 	}
 }
