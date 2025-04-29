@@ -24,7 +24,6 @@ func run() {
 		}
 
 		_, err = commands.NewCommand(raw)
-		fmt.Println(err)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 		}
