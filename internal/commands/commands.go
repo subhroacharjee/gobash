@@ -2,17 +2,22 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 )
 
 type Command struct {
-	raw string
+	raw   string
+	paths []string
 }
 
 func RunCommand(raw string) (string, error) {
+	pathsStr := os.Getenv("PATH")
+	paths := strings.Split(pathsStr, ":")
 	cmd := Command{
-		raw: strings.TrimSuffix(raw, "\n"),
+		raw:   strings.TrimSuffix(raw, "\n"),
+		paths: paths,
 	}
 
 	cmdName, err := cmd.searchFunctionToExecute()
@@ -44,5 +49,24 @@ func (c Command) searchFunctionToExecute() (string, error) {
 		}
 	}
 
+	return "", fmt.Errorf("not found")
+}
+
+func (c Command) searchCmdInPath() (string, error) {
+	// fmt.Println("called")
+	for _, path := range c.paths {
+		absPath := fmt.Sprintf("%s/%s", path, c.raw)
+		// fmt.Println(absPath)
+		if _, err := os.Stat(absPath); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			} else {
+				// TODO: figure it out
+			}
+		} else {
+			return absPath, nil
+		}
+
+	}
 	return "", fmt.Errorf("not found")
 }

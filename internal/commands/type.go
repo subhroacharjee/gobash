@@ -19,10 +19,15 @@ func (c Command) Type() (string, error) {
 
 	cmd := strings.TrimLeftFunc(res[1], unicode.IsSpace)
 	// fmt.Println(cmd)
-	cmdBase := Command{raw: cmd}
+	cmdBase := Command{raw: cmd, paths: c.paths}
 	cmdName, err := cmdBase.searchFunctionToExecute()
 	if err != nil {
-		return "", fmt.Errorf("%s: not found", strings.TrimSuffix(cmd, "\n"))
+		absPath, err := cmdBase.searchCmdInPath()
+		if err != nil {
+			return "", fmt.Errorf("%s: not found", strings.TrimSuffix(cmd, "\n"))
+		}
+
+		return fmt.Sprintf("%s is %s", cmd, absPath), nil
 	}
 	askedCmdName := "Describe" + cmdName
 
