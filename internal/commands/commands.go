@@ -3,8 +3,10 @@ package commands
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 type Command struct {
@@ -22,7 +24,23 @@ func RunCommand(raw string) (string, error) {
 
 	cmdName, err := cmd.searchFunctionToExecute()
 	if err != nil {
-		return "", fmt.Errorf("%s: command not found", strings.TrimSuffix(raw, "\n"))
+		commandWithArgs := strings.Split(strings.TrimFunc(cmd.raw, unicode.IsSpace), " ")
+
+		shellCmdWrapper := Command{raw: commandWithArgs[0], paths: paths}
+
+		if _, err := shellCmdWrapper.searchCmdInPath(); err != nil {
+			return "", fmt.Errorf("%s: command not found", strings.TrimSuffix(raw, "\n"))
+		}
+
+		shellCmd := exec.Command(commandWithArgs[0], commandWithArgs[1:]...)
+
+		output, err := shellCmd.Output()
+		if err != nil {
+			return "", err
+		} else {
+			return strings.TrimSuffix(string(output), "\n"), nil
+		}
+
 	}
 
 	v := reflect.ValueOf(cmd)
@@ -54,8 +72,9 @@ func (c Command) searchFunctionToExecute() (string, error) {
 
 func (c Command) searchCmdInPath() (string, error) {
 	// fmt.Println("called")
+	mainCmd := strings.Split(strings.TrimFunc(c.raw, unicode.IsSpace), " ")[0]
 	for _, path := range c.paths {
-		absPath := fmt.Sprintf("%s/%s", path, c.raw)
+		absPath := fmt.Sprintf("%s/%s", path, mainCmd)
 		// fmt.Println(absPath)
 		if _, err := os.Stat(absPath); err != nil {
 			if os.IsNotExist(err) {
