@@ -11,7 +11,7 @@ func (c Command) IsValidForEcho() bool {
 
 func (c Command) Echo() (string, error) {
 	data := strings.Split(c.raw, "echo")[1]
-	return strings.TrimLeftFunc(data, unicode.IsSpace), nil
+	return strings.TrimLeftFunc(data, unicode.IsSpace) + "\n", nil
 }
 
 func (c Command) DescribeEcho() string {

@@ -27,7 +27,7 @@ func run() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 		} else {
-			fmt.Fprintln(os.Stdin, data)
+			fmt.Fprint(os.Stdin, data)
 		}
 
 	}

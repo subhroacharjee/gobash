@@ -38,7 +38,7 @@ func RunCommand(raw string) (string, error) {
 		if err != nil {
 			return "", err
 		} else {
-			return strings.TrimSuffix(string(output), "\n"), nil
+			return string(output), nil
 		}
 
 	}

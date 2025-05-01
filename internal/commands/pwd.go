@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -10,7 +11,11 @@ func (c Command) IsValidForPwd() bool {
 }
 
 func (c Command) Pwd() (string, error) {
-	return os.Getwd()
+	pwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s\n", pwd), nil
 }
 
 func (c Command) DescribePwd() string {

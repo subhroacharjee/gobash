@@ -27,7 +27,7 @@ func (c Command) Type() (string, error) {
 			return "", fmt.Errorf("%s: not found", strings.TrimSuffix(cmd, "\n"))
 		}
 
-		return fmt.Sprintf("%s is %s", cmd, absPath), nil
+		return fmt.Sprintf("%s is %s\n", cmd, absPath), nil
 	}
 	askedCmdName := "Describe" + cmdName
 
@@ -35,9 +35,9 @@ func (c Command) Type() (string, error) {
 
 	values := v.MethodByName(askedCmdName).Call([]reflect.Value{})
 	if len(values) == 0 {
-		return fmt.Sprintf("%s: doesnt have any type description", cmd), nil
+		return fmt.Sprintf("%s: doesnt have any type description\n", cmd), nil
 	}
-	return values[0].String(), nil
+	return values[0].String() + "\n", nil
 }
 
 func (c Command) DescribeType() string {
