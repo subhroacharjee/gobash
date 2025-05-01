@@ -31,7 +31,8 @@ func (c Command) Cd() (string, error) {
 	targetPath := strings.TrimFunc(args[1], unicode.IsSpace)
 
 	if strings.HasPrefix(targetPath, "~") {
-		targetPath = filepath.Join(usr.HomeDir, targetPath[1:])
+		homePath := os.Getenv("HOME")
+		targetPath = filepath.Join(homePath, targetPath[1:])
 	}
 	if err := os.Chdir(targetPath); err != nil {
 		if os.IsNotExist(err) {
