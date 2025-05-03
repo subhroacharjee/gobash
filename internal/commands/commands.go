@@ -7,32 +7,38 @@ import (
 	"reflect"
 	"strings"
 	"unicode"
+
+	"github.com/mattn/go-shellwords"
 )
 
 type Command struct {
 	raw   string
 	paths []string
+	args  []string
 }
 
 func RunCommand(raw string) (string, error) {
 	pathsStr := os.Getenv("PATH")
 	paths := strings.Split(pathsStr, ":")
+	commandWithArgs := strings.Split(strings.TrimFunc(strings.TrimSuffix(raw, "\n"), unicode.IsSpace), " ")
 	cmd := Command{
-		raw:   strings.TrimSuffix(raw, "\n"),
+		raw:   commandWithArgs[0],
 		paths: paths,
+		args:  commandWithArgs[1:],
+	}
+
+	if err := cmd.ParseArgs(); err != nil {
+		return "", err
 	}
 
 	cmdName, err := cmd.searchFunctionToExecute()
 	if err != nil {
-		commandWithArgs := strings.Split(strings.TrimFunc(cmd.raw, unicode.IsSpace), " ")
 
-		shellCmdWrapper := Command{raw: commandWithArgs[0], paths: paths}
-
-		if _, err := shellCmdWrapper.searchCmdInPath(); err != nil {
+		if _, err := cmd.searchCmdInPath(); err != nil {
 			return "", fmt.Errorf("%s: command not found", strings.TrimSuffix(raw, "\n"))
 		}
 
-		shellCmd := exec.Command(commandWithArgs[0], commandWithArgs[1:]...)
+		shellCmd := exec.Command(cmd.raw, cmd.args...)
 
 		output, err := shellCmd.Output()
 		if err != nil {
@@ -88,4 +94,26 @@ func (c Command) searchCmdInPath() (string, error) {
 
 	}
 	return "", fmt.Errorf("not found")
+}
+
+func (c *Command) ParseArgs() error {
+	finalArgs := make([]string, 0)
+	strArgs := strings.TrimFunc(strings.Join(c.args, " "), unicode.IsSpace)
+	if len(strArgs) == 0 {
+		c.args = finalArgs
+		return nil
+	}
+
+	parser := shellwords.NewParser()
+	parser.ParseEnv = true
+	parser.ParseBacktick = true
+
+	args, err := parser.Parse(strArgs)
+	if err != nil {
+		return err
+	}
+
+	c.args = args
+
+	return nil
 }

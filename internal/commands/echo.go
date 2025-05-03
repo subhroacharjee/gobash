@@ -10,7 +10,7 @@ func (c Command) IsValidForEcho() bool {
 }
 
 func (c Command) Echo() (string, error) {
-	data := strings.Split(c.raw, "echo")[1]
+	data := strings.Join(c.args, " ")
 	return strings.TrimLeftFunc(data, unicode.IsSpace) + "\n", nil
 }
 

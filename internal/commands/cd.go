@@ -14,21 +14,21 @@ func (c Command) IsValidForCd() bool {
 }
 
 func (c Command) Cd() (string, error) {
-	args := strings.Split(c.raw, " ")
+	args := c.args
 
 	usr, err := user.Current()
 	if err != nil {
 		return "", err
 	}
 
-	if len(args) <= 1 {
+	if len(args) < 1 {
 		if err := os.Chdir(usr.HomeDir); err != nil {
 			return "\r", err
 		}
 		return "", nil
 	}
 
-	targetPath := strings.TrimFunc(args[1], unicode.IsSpace)
+	targetPath := strings.TrimFunc(args[0], unicode.IsSpace)
 
 	if strings.HasPrefix(targetPath, "~") {
 		homePath := os.Getenv("HOME")

@@ -11,7 +11,7 @@ func (c Command) IsValidForExit() bool {
 }
 
 func (c Command) Exit() (string, error) {
-	res := strings.Split(c.raw, "exit ")
+	res := c.args
 	if len(res) <= 1 {
 		os.Exit(0)
 	}
