@@ -7,24 +7,27 @@ import (
 	"reflect"
 	"strings"
 	"unicode"
-
-	"github.com/mattn/go-shellwords"
 )
 
 type Command struct {
-	raw   string
-	paths []string
-	args  []string
+	raw     string
+	paths   []string
+	args    []string
+	rawArgs string
 }
 
 func RunCommand(raw string) (string, error) {
 	pathsStr := os.Getenv("PATH")
 	paths := strings.Split(pathsStr, ":")
 	commandWithArgs := strings.Split(strings.TrimFunc(strings.TrimSuffix(raw, "\n"), unicode.IsSpace), " ")
+	if len(commandWithArgs[0]) == 0 {
+		return "", nil
+	}
 	cmd := Command{
-		raw:   commandWithArgs[0],
-		paths: paths,
-		args:  commandWithArgs[1:],
+		raw:     commandWithArgs[0],
+		paths:   paths,
+		args:    commandWithArgs[1:],
+		rawArgs: strings.Split(strings.TrimFunc(strings.TrimSuffix(raw, "\n"), unicode.IsSpace), commandWithArgs[0])[1],
 	}
 
 	if err := cmd.ParseArgs(); err != nil {
@@ -39,12 +42,14 @@ func RunCommand(raw string) (string, error) {
 		}
 
 		shellCmd := exec.Command(cmd.raw, cmd.args...)
+		shellCmd.Stdout = os.Stdout
+		shellCmd.Stdin = os.Stderr
 
-		output, err := shellCmd.Output()
+		err := shellCmd.Run()
 		if err != nil {
-			return "", err
+			return "", nil
 		} else {
-			return string(output), nil
+			return "", nil
 		}
 
 	}
@@ -103,17 +108,63 @@ func (c *Command) ParseArgs() error {
 		c.args = finalArgs
 		return nil
 	}
+	// fmt.Println(strArgs)
 
-	parser := shellwords.NewParser()
-	parser.ParseEnv = true
-	parser.ParseBacktick = true
+	arg := ""
+	for i := 0; i < len(strArgs); i++ {
+		r := strArgs[i]
+		if r == '\'' {
+			for i = i + 1; i < len(strArgs) && strArgs[i] != '\''; i++ {
+				arg += string(strArgs[i])
+			}
+			if i == len(strArgs) && strArgs[i-1] != '\'' {
+				return fmt.Errorf("unterminated single quotation")
+			}
+			finalArgs = append(finalArgs, arg)
+			arg = ""
+			continue
+		} else if r == '"' {
+			for i = i + 1; i < len(strArgs) && strArgs[i] != '"'; i++ {
+				arg += string(strArgs[i])
 
-	args, err := parser.Parse(strArgs)
-	if err != nil {
-		return err
+				// if strArgs[i] == '\\' {
+				// 	if i == len(strArgs)-1 {
+				// 		return fmt.Errorf("unterminated double quotation")
+				// 	}
+				// 	arg += string(strArgs[i : i+1])
+				// 	i++
+				// } else {
+				//
+				// }
+			}
+
+			finalArgs = append(finalArgs, arg)
+			arg = ""
+			continue
+		} else if string(r) == "\\" {
+			if i == len(strArgs)-1 {
+				return fmt.Errorf("unterminated double quotation")
+			}
+			arg += string(strArgs[i+1])
+			i++
+		} else if unicode.IsSpace(rune(r)) {
+			if len(arg) != 0 {
+				finalArgs = append(finalArgs, arg, " ")
+				arg = ""
+				continue
+			}
+
+			if !unicode.IsSpace(rune(finalArgs[len(finalArgs)-1][0])) {
+				finalArgs = append(finalArgs, " ")
+			}
+		} else {
+			arg += string(r)
+		}
+		// fmt.Println(">>>>>>>>>>>>>>>", arg, len(arg))
 	}
+	finalArgs = append(finalArgs, arg)
 
-	c.args = args
+	c.args = finalArgs
 
 	return nil
 }
