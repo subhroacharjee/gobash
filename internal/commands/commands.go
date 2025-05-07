@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -19,15 +20,10 @@ type Command struct {
 func RunCommand(raw string) (string, error) {
 	pathsStr := os.Getenv("PATH")
 	paths := strings.Split(pathsStr, ":")
-	commandWithArgs := strings.Split(strings.TrimFunc(strings.TrimSuffix(raw, "\n"), unicode.IsSpace), " ")
-	if len(commandWithArgs[0]) == 0 {
-		return "", nil
-	}
+
 	cmd := Command{
-		raw:     commandWithArgs[0],
 		paths:   paths,
-		args:    commandWithArgs[1:],
-		rawArgs: strings.Split(strings.TrimFunc(strings.TrimSuffix(raw, "\n"), unicode.IsSpace), commandWithArgs[0])[1],
+		rawArgs: strings.TrimFunc(strings.TrimSuffix(raw, "\n"), unicode.IsSpace),
 	}
 
 	if err := cmd.ParseArgs(); err != nil {
@@ -39,6 +35,12 @@ func RunCommand(raw string) (string, error) {
 
 		if _, err := cmd.searchCmdInPath(); err != nil {
 			return "", fmt.Errorf("%s: command not found", strings.TrimSuffix(raw, "\n"))
+		}
+
+		if strings.HasPrefix(cmd.raw, "custom_exe") {
+			cmd.args = slices.DeleteFunc(cmd.args, func(s string) bool {
+				return unicode.IsSpace(rune(s[0]))
+			})
 		}
 
 		shellCmd := exec.Command(cmd.raw, cmd.args...)
@@ -83,7 +85,7 @@ func (c Command) searchFunctionToExecute() (string, error) {
 
 func (c Command) searchCmdInPath() (string, error) {
 	// fmt.Println("called")
-	mainCmd := strings.Split(strings.TrimFunc(c.raw, unicode.IsSpace), " ")[0]
+	mainCmd := c.raw
 	for _, path := range c.paths {
 		absPath := fmt.Sprintf("%s/%s", path, mainCmd)
 		// fmt.Println(absPath)
@@ -103,7 +105,7 @@ func (c Command) searchCmdInPath() (string, error) {
 
 func (c *Command) ParseArgs() error {
 	finalArgs := make([]string, 0)
-	strArgs := strings.TrimFunc(strings.Join(c.args, " "), unicode.IsSpace)
+	strArgs := c.rawArgs
 	if len(strArgs) == 0 {
 		c.args = finalArgs
 		return nil
@@ -162,11 +164,13 @@ func (c *Command) ParseArgs() error {
 		} else {
 			arg += string(r)
 		}
-		// fmt.Println(">>>>>>>>>>>>>>>", arg, len(arg))
 	}
-	finalArgs = append(finalArgs, arg)
 
-	c.args = finalArgs
+	finalArgs = append(finalArgs, arg)
+	// fmt.Println(">>>>>>>>>>>>>>>", finalArgs[0])
+
+	c.raw = finalArgs[0]
+	c.args = finalArgs[1:]
 
 	return nil
 }

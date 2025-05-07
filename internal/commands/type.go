@@ -12,12 +12,12 @@ func (c Command) IsValidForType() bool {
 }
 
 func (c Command) Type() (string, error) {
-	res := c.args
+	res := strings.Join(c.args, " ")
 	if len(res) < 1 {
 		return "", fmt.Errorf("type needs atleast one value")
 	}
 
-	cmd := strings.TrimLeftFunc(res[0], unicode.IsSpace)
+	cmd := strings.TrimLeftFunc(res, unicode.IsSpace)
 	// fmt.Println(cmd)
 	cmdBase := Command{raw: cmd, paths: c.paths}
 	cmdName, err := cmdBase.searchFunctionToExecute()

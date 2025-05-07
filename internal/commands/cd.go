@@ -28,7 +28,7 @@ func (c Command) Cd() (string, error) {
 		return "", nil
 	}
 
-	targetPath := strings.TrimFunc(args[0], unicode.IsSpace)
+	targetPath := strings.TrimFunc(strings.Join(c.args, " "), unicode.IsSpace)
 
 	if strings.HasPrefix(targetPath, "~") {
 		homePath := os.Getenv("HOME")
