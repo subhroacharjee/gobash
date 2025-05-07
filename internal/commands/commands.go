@@ -125,17 +125,19 @@ func (c *Command) ParseArgs() error {
 			continue
 		} else if r == '"' {
 			for i = i + 1; i < len(strArgs) && strArgs[i] != '"'; i++ {
-				arg += string(strArgs[i])
+				if strArgs[i] == '\\' {
+					if i == len(strArgs)-1 {
+						return fmt.Errorf("unterminated double quotation")
+					}
+					if strArgs[i+1] == '\\' || strArgs[i+1] == '$' || strArgs[i+1] == '"' {
 
-				// if strArgs[i] == '\\' {
-				// 	if i == len(strArgs)-1 {
-				// 		return fmt.Errorf("unterminated double quotation")
-				// 	}
-				// 	arg += string(strArgs[i : i+1])
-				// 	i++
-				// } else {
-				//
-				// }
+						arg += string(strArgs[i+1])
+						i++
+						continue
+					}
+
+				}
+				arg += string(strArgs[i])
 			}
 
 			finalArgs = append(finalArgs, arg)
